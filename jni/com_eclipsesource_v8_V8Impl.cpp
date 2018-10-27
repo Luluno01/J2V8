@@ -13,7 +13,8 @@
 #include <iostream>
 #include <v8.h>
 #include <string.h>
-#include <v8-debug.h>
+// #include <v8-debug.h>
+#include <libplatform/v8-tracing.h>
 #include <map>
 #include <cstdlib>
 #include "com_eclipsesource_v8_V8Impl.h"
@@ -316,13 +317,13 @@ extern "C" {
     void _register_fs_event_wrap(void);
     void _register_js_stream(void);
     void _register_buffer(void);
-    void _register_config(void);
+    // void _register_config(void);
     void _register_contextify(void);
     void _register_crypto(void);
-    void _register_fs(void);
+    // void _register_fs(void);
     void _register_http_parser(void);
     void _register_icu(void);
-    void _register_os(void);
+    // void _register_os(void);
     void _register_url(void);
     void _register_util(void);
     void _register_v8(void);
@@ -333,11 +334,27 @@ extern "C" {
     void _register_spawn_sync(void);
     void _register_stream_wrap(void);
     void _register_tcp_wrap(void);
-    void _register_timer_wrap(void);
+    // void _register_timer_wrap(void);
     void _register_tls_wrap(void);
     void _register_tty_wrap(void);
     void _register_udp_wrap(void);
     void _register_uv(void);
+
+    void _register_symbols(void);
+    void _register_heap_utils(void);
+    void _register_module_wrap(void);
+    void _register_domain(void);
+    void _register_http2(void);
+    void _register_messaging(void);
+    void _register_options(void);
+    void _register_performance(void);
+    void _register_serdes(void);
+    void _register_trace_events(void);
+    void _register_types(void);
+    void _register_worker(void);
+    void _register_stream_pipe(void);
+    void _register_string_decoder(void);
+    void _register_timers(void);
   }
 #endif
 
@@ -362,13 +379,13 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1startNodeJS
     _register_fs_event_wrap();
     _register_js_stream();
     _register_buffer();
-    _register_config();
+    // _register_config();
     _register_contextify();
     _register_crypto();
-    _register_fs();
+    // _register_fs();
     _register_http_parser();
     _register_icu();
-    _register_os();
+    // _register_os();
     _register_url();
     _register_util();
     _register_v8();
@@ -379,11 +396,27 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1startNodeJS
     _register_spawn_sync();
     _register_stream_wrap();
     _register_tcp_wrap();
-    _register_timer_wrap();
+    // _register_timer_wrap();
     _register_tls_wrap();
     _register_tty_wrap();
     _register_udp_wrap();
     _register_uv();
+
+    _register_symbols();
+    _register_heap_utils();
+    _register_module_wrap();
+    _register_domain();
+    _register_http2();
+    _register_messaging();
+    _register_options();
+    _register_performance();
+    _register_serdes();
+    _register_trace_events();
+    _register_types();
+    _register_worker();
+    _register_stream_pipe();
+    _register_string_decoder();
+    _register_timers();
   #endif
   }
   rt->uvLoop = uv_default_loop();
@@ -459,7 +492,7 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
   runtime->v8 = env->NewGlobalRef(v8);
   runtime->pendingException = NULL;
   HandleScope handle_scope(runtime->isolate);
-  Handle<ObjectTemplate> globalObject = ObjectTemplate::New();
+  Handle<ObjectTemplate> globalObject = ObjectTemplate::New(runtime->isolate);
   if (globalAlias == NULL) {
     Handle<Context> context = Context::New(runtime->isolate, NULL, globalObject);
     runtime->context_.Reset(runtime->isolate, context);
@@ -685,7 +718,7 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1terminateExecution
 	  return;
 	}
 	Isolate* isolate = getIsolate(env, v8RuntimePtr);
-	V8::TerminateExecution(isolate);
+  isolate->TerminateExecution();
 	return;
 }
 
@@ -737,7 +770,7 @@ bool compileScript(Isolate *isolate, jstring &jscript, JNIEnv *env, jstring jscr
   if (jscriptName != NULL) {
     scriptOriginPtr = createScriptOrigin(env, isolate, jscriptName, jlineNumber);
   }
-  script = Script::Compile(source, scriptOriginPtr);
+  Script::Compile(isolate->GetCurrentContext(), source, scriptOriginPtr).ToLocal(&script);
   if (scriptOriginPtr != NULL) {
     delete(scriptOriginPtr);
   }
@@ -749,7 +782,7 @@ bool compileScript(Isolate *isolate, jstring &jscript, JNIEnv *env, jstring jscr
 }
 
 bool runScript(Isolate* isolate, JNIEnv *env, Local<Script> *script, TryCatch* tryCatch, jlong v8RuntimePtr) {
-  (*script)->Run();
+  (*script)->Run(isolate->GetCurrentContext());
   if (tryCatch->HasCaught()) {
     throwExecutionException(env, isolate, tryCatch, v8RuntimePtr);
     return false;
@@ -758,7 +791,7 @@ bool runScript(Isolate* isolate, JNIEnv *env, Local<Script> *script, TryCatch* t
 }
 
 bool runScript(Isolate* isolate, JNIEnv *env, Local<Script> *script, TryCatch* tryCatch, Local<Value> &result, jlong v8RuntimePtr) {
-  result = (*script)->Run();
+  (*script)->Run(isolate->GetCurrentContext()).ToLocal(&result);
   if (tryCatch->HasCaught()) {
     throwExecutionException(env, isolate, tryCatch, v8RuntimePtr);
     return false;
@@ -1706,7 +1739,7 @@ JNIEXPORT jlongArray JNICALL Java_com_eclipsesource_v8_V8__1initNewV8Function
   MethodDescriptor* md = new MethodDescriptor();
   Local<External> ext = External::New(isolate, md);
   Persistent<External> pext(isolate, ext);
-  isolate->IdleNotification(1000);
+  isolate->IdleNotificationDeadline(1000);
   pext.SetWeak(md, [](v8::WeakCallbackInfo<MethodDescriptor> const& data) {
     MethodDescriptor* md = data.GetParameter();
     jobject v8 = reinterpret_cast<V8Runtime*>(md->v8RuntimePtr)->v8;
@@ -1762,7 +1795,7 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1registerJavaMethod
   }
   Handle<Object> object = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(objectHandle));
   Local<String> v8FunctionName = createV8String(env, isolate, functionName);
-  isolate->IdleNotification(1000);
+  isolate->IdleNotificationDeadline(1000);
   MethodDescriptor* md= new MethodDescriptor();
   Local<External> ext =  External::New(isolate, md);
   Persistent<External> pext(isolate, ext);
@@ -1792,7 +1825,7 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1setPrototype
   Isolate* isolate = SETUP(env, v8RuntimePtr, );
   Handle<Object> object = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(objectHandle));
   Handle<Object> prototype = Local<Object>::New(isolate, *reinterpret_cast<Persistent<Object>*>(prototypeHandle));
-  object->SetPrototype(prototype);
+  object->SetPrototype(isolate->GetCurrentContext(), prototype);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_eclipsesource_v8_V8__1equals
@@ -1918,8 +1951,11 @@ void throwParseException(JNIEnv *env, Isolate* isolate, TryCatch* tryCatch) {
   }
   else {
     String::Utf8Value filename(message->GetScriptResourceName());
-    int lineNumber = message->GetLineNumber();
-    String::Value sourceline(message->GetSourceLine());
+    int lineNumber;
+    message->GetLineNumber(isolate->GetCurrentContext()).To(&lineNumber);
+    Local<String> _sourceline;
+    message->GetSourceLine(isolate->GetCurrentContext()).ToLocal(&_sourceline);
+    String::Value sourceline(_sourceline);
     int start = message->GetStartColumn();
     int end = message->GetEndColumn();
     const char* filenameString = ToCString(filename);
@@ -1935,12 +1971,17 @@ void throwExecutionException(JNIEnv *env, Isolate* isolate, TryCatch* tryCatch, 
   }
   else {
     String::Utf8Value filename(message->GetScriptResourceName());
-    int lineNumber = message->GetLineNumber();
-    String::Value sourceline(message->GetSourceLine());
+    int lineNumber;
+    message->GetLineNumber(isolate->GetCurrentContext()).To(&lineNumber);
+    Local<String> _sourceline;
+    message->GetSourceLine(isolate->GetCurrentContext()).ToLocal(&_sourceline);
+    String::Value sourceline(_sourceline);
     int start = message->GetStartColumn();
     int end = message->GetEndColumn();
     const char* filenameString = ToCString(filename);
-    String::Utf8Value stack_trace(tryCatch->StackTrace());
+    Local<Value> trace;
+    tryCatch->StackTrace(isolate->GetCurrentContext()).ToLocal(&trace);
+    String::Utf8Value stack_trace(trace);
     const char* stackTrace = NULL;
     if (stack_trace.length() > 0) {
       stackTrace = ToCString(stack_trace);

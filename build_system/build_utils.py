@@ -346,10 +346,10 @@ def check_node_builtins():
         with open(node_src + cc_file, "r") as node_cpp:
             node_code = node_cpp.read()
 
-        m = re.search(r"NODE_MODULE_CONTEXT_AWARE_BUILTIN\((.*),\s*node::.*\)", node_code)
+        m = re.search(r"NODE_MODULE_CONTEXT_AWARE_(BUILTIN)|(INTERNAL)\((.*),\s*node::.*\)", node_code)
 
         if (m is not None):
-            node_builtins.append(m.group(1))
+            node_builtins.append(m.group(3))
 
     # are all Node.js builtins mentioned?
     builtins_ok = collections.Counter(j2v8_builtins) == collections.Counter(node_builtins)
