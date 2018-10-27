@@ -33,19 +33,30 @@ function (get_njs_libs nodejs_dir config_name fail_on_missing_libs)
         # Node.js link libraries
         set (njs_libs
             # nodejs/build/$Config/lib
-            ${njs_build_lib}/standalone_inspector.lib
-            ${njs_build_lib}/v8_base_0.lib
-            ${njs_build_lib}/v8_base_1.lib
-            ${njs_build_lib}/v8_base_2.lib
-            ${njs_build_lib}/v8_base_3.lib
-            ${njs_build_lib}/v8_libbase.lib
-            ${njs_build_lib}/v8_libplatform.lib
-            ${njs_build_lib}/v8_libsampler.lib
-            ${njs_build_lib}/v8_nosnapshot.lib
-            ${njs_build_lib}/v8_snapshot.lib
+            # ${njs_build_lib}/standalone_inspector.lib
+            # ${njs_build_lib}/v8_base.lib
+            # ${njs_build_lib}/v8_base_0.lib
+            # ${njs_build_lib}/v8_base_1.lib
+            # ${njs_build_lib}/v8_base_2.lib
+            # ${njs_build_lib}/v8_libbase.lib
+            # ${njs_build_lib}/v8_libplatform.lib
+            # ${njs_build_lib}/v8_libsampler.lib
+            # ${njs_build_lib}/v8_nosnapshot.lib
+            # ${njs_build_lib}/v8_snapshot.lib
+
+            # ${njs_extra_lib}/v8_init.lib
+            # ${njs_extra_lib}/v8_base_0.lib
+            # ${njs_extra_lib}/v8_base_1.lib
+            # ${njs_extra_lib}/v8_base_2.lib
+            # ${njs_extra_lib}/v8_base_3.lib
+            ${njs_extra_lib}/v8_libbase.lib
+            ${njs_extra_lib}/v8_libplatform.lib
+            ${njs_extra_lib}/v8_libsampler.lib
+            # ${njs_extra_lib}/v8_nosnapshot.lib
+            # ${njs_extra_lib}/v8_snapshot.lib
 
             # nodejs/build/$Config
-            ${njs_build}/mksnapshot.lib
+            # ${njs_build}/mksnapshot.lib
 
             # nodejs/$Config/lib
             ${njs_extra_lib}/cares.lib
@@ -57,12 +68,15 @@ function (get_njs_libs nodejs_dir config_name fail_on_missing_libs)
             ${njs_extra_lib}/icutools.lib
             ${njs_extra_lib}/icuucx.lib
             ${njs_extra_lib}/libuv.lib
-            ${njs_extra_lib}/node.lib
+            ${njs_extra_lib}/nghttp2.lib
+            # ${njs_extra_lib}/node.lib
             ${njs_extra_lib}/openssl.lib
             ${njs_extra_lib}/zlib.lib
 
             # nodejs/$Config
-            ${njs_extra}/cctest.lib
+            ${njs_extra}/node.lib
+            # ${njs_extra}/cctest.lib
+            # ${njs_extra}/mksnapshot.lib
         )
 
         # verify that all required Node.js libs actually exist
